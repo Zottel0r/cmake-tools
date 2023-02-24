@@ -1,3 +1,36 @@
+#
+# Usage:
+# extractTargetsFromGenexp(<list> OUTPUT <target_list_variable>)
+# extractTargetsFromGenexp(<input> [<input> ...]> OUTPUT <target_list_variable>)
+function(extractTargetsFromGenexp)
+    cmake_parse_arguments(extractTargetsFromGenexp "" "OUTPUT" "" ${ARGN})
+    set(args ${extractTargetsFromGenexp_UNPARSED_ARGUMENTS})
+    list(LENGTH args num)
+    # print(num)
+    if(num EQUAL 1)
+        if(DEFINED ${args})
+            set(args ${${args}})
+        endif()
+    endif()
+    # print(args)
+    foreach(arg ${args})
+        set(regex "<TARGET_[a-zA-Z_]+:([^\;<>]+)>")
+        # print(arg)
+        string(REGEX MATCHALL ${regex} output_variable ${arg})
+        # print(output_variable)
+        foreach(arg ${output_variable})
+            # print(arg)
+            if(arg MATCHES ${regex})
+                list(APPEND extractTargetsFromGenexp_targets ${CMAKE_MATCH_1} )
+            endif()
+        endforeach()
+    endforeach()
+    # print(targets)
+    # print(CMA)
+    set(${extractTargetsFromGenexp_OUTPUT} ${extractTargetsFromGenexp_targets} PARENT_SCOPE)
+endfunction()
+
+#Usage:
 # package(simulator
 #    FILES
 #    $<TARGET_FILE:vcSimulation>
@@ -7,14 +40,23 @@
 function(package name)
     set(options DIR_CONTENT_ONLY)
     set(oneValueArgs TARGET TMP_DIR OUT_ARCHIVE_VAR)
-    set(multiValueArgs FILES COMMANDS)
+    set(multiValueArgs FILES GENEXP DEPENDS)
     cmake_parse_arguments(package "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    dump_variables("^package_" GLUE ", ")
 
+    # extractTargetsFromGenexp(package_GENEXP OUTPUT targets)
+    extractTargetsFromGenexp(${package_GENEXP} OUTPUT targets)
+    list(APPEND package_DEPENDS ${targets})
+
+    # package_UNPARSED_ARGUMENTS
     string(GENEX_STRIP "${package_FILES}" stripped)
     if(NOT (stripped STREQUAL package_FILES))
-        message(FATAL_ERROR "no GENEXP in Files allowed!")
+        # print(package_FILES)
+        # print(stripped)
+        set(package_FILES ${stripped})
+        message(WARNING "no generator expression in FILES argument allowed! Use GENEXP instead")
     endif()
+    # --------------------------------------------------------------------
+    dump_variables("package_" GLUE ";")
 
     # if(package_TARGET)
     #     get_directory_property(targetList DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} BUILDSYSTEM_TARGETS)
