@@ -53,7 +53,7 @@ function(package name)
         # print(package_FILES)
         # print(stripped)
         set(package_FILES ${stripped})
-        message(WARNING "no generator expression in FILES argument allowed! Use GENEXP instead")
+        msg(HIGH "no generator expression in FILES argument allowed! Use GENEXP instead")
     endif()
     # --------------------------------------------------------------------
     dump_variables("package_" GLUE ";")

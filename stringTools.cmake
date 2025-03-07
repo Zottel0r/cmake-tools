@@ -1,3 +1,131 @@
+
+#
+# Usage:
+# str2Color(<color> <variable> [REVERSE])
+# sourrounds a string with escape sequences. Example:
+#
+# Example:
+# set(foo "Wow my text")
+# str2Color(Red foo)
+# # then foo will be: "\x1b[31mWow my Text\x1b[m"
+# - REVERSE: will first put the color reset, then the color
+# # then foo will be: "\x1b[mWow my Text\x1b[31m")
+#function(str2color s2c_type var)
+#    if(NOT WIN32)
+#        string(ASCII 27 Esc)
+#        set(ColourReset "${Esc}[m")
+#        set(ColourBold "${Esc}[1m")
+#        set(Red "${Esc}[31m")
+#        set(Green "${Esc}[32m")
+#        set(Yellow "${Esc}[33m")
+#        set(Blue "${Esc}[34m")
+#        set(Magenta "${Esc}[35m")
+#        set(Cyan "${Esc}[36m")
+#        set(White "${Esc}[37m")
+#        set(BoldRed "${Esc}[1;31m")
+#        set(BoldGreen "${Esc}[1;32m")
+#        set(BoldYellow "${Esc}[1;33m")
+#        set(BoldBlue "${Esc}[1;34m")
+#        set(BoldMagenta "${Esc}[1;35m")
+#        set(BoldCyan "${Esc}[1;36m")
+#        set(BoldWhite "${Esc}[1;37m")
+#    endif()
+#
+#    if(DEFINED ${s2c_type})
+#        if(ARGN STREQUAL REVERSE)
+#            set(${var} ${ColourReset}${${var}}${${s2c_type}} PARENT_SCOPE)
+#        else()
+#            set(${var} ${${s2c_type}}${${var}}${ColourReset} PARENT_SCOPE)
+#        endif()
+#    endif()
+#endfunction()
+
+macro(print_color NAME)
+    printc("        ${NAME}" COLOR ${NAME})
+endmacro()
+
+function(text)
+    cmake_parse_arguments(PARSE_ARGV 0 "_TEXT" "BOLD" "COLOR" "")
+    set(_TEXT_OPTIONS -E cmake_echo_color --no-newline)
+
+    if(_TEXT_COLOR)
+        string(TOLOWER "${_TEXT_COLOR}" _TEXT_COLOR_LOWER)
+        if(NOT ${_TEXT_COLOR_LOWER} MATCHES "^normal|black|red|green|yellow|blue|magenta|cyan|white")
+            message(WARNING " Color ${_TEXT_COLOR} is not support. ")
+            message(" Only these colours are supported: ... ")
+            print_color(NORMAL)
+            print_color(BLACK)
+            print_color(RED)
+            print_color(GREEN)
+            print_color(YELLOW)
+            print_color(BLUE)
+            print_color(MAGENTA)
+            print_color(CYAN)
+            print_color(WHITE)
+#            set(dummy WARING "Color ${_TEXT_COLOR} is not support.")
+        else()
+            list(APPEND _TEXT_OPTIONS --${_TEXT_COLOR_LOWER})
+        endif()
+    endif()
+
+    if(_TEXT_BOLD)
+        list(APPEND _TEXT_OPTIONS --bold)
+    endif()
+
+    if(${CMAKE_VERSION} LESS 3.15)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E env CLICOLOR_FORCE=1 ${CMAKE_COMMAND} ${_TEXT_OPTIONS} ${${_TEXT_UNPARSED_ARGUMENTS}}
+            OUTPUT_VARIABLE _TEXT_RESULT
+        )
+    else ()
+        execute_process(COMMAND ${CMAKE_COMMAND} -E env CLICOLOR_FORCE=1 ${CMAKE_COMMAND} ${_TEXT_OPTIONS} ${${_TEXT_UNPARSED_ARGUMENTS}}
+            OUTPUT_VARIABLE _TEXT_RESULT
+            ECHO_ERROR_VARIABLE
+        )
+    endif ()
+
+    set(TEXT_RESULT ${_TEXT_RESULT} PARENT_SCOPE)
+    set(TEXT_VAR ${_TEXT_UNPARSED_ARGUMENTS} PARENT_SCOPE)
+    set(TEXT_FAIL TRUE PARENT_SCOPE)
+endfunction()
+unset(print_color)
+
+function(printc inText)
+    text(${ARGN} inText)
+#        message(" >>>> ARGN: ${ARGN}")
+#        message(" >>>> TEXT_RESULT: ${TEXT_RESULT}")
+#        message(" >>>> TEXT_VAR: ${TEXT_VAR}")
+#        message(" >>>> ${TEXT_VAR}: ${${TEXT_VAR}}")
+    message("${TEXT_RESULT} ")
+endfunction()
+function(str2color)
+    text(${ARGN})
+#    message(" >>>> ARGN: ${ARGN}")
+#    message(" >>>> TEXT_RESULT: ${TEXT_RESULT}")
+#    message(" >>>> TEXT_VAR: ${TEXT_VAR}")
+#    message(" >>>> ${TEXT_VAR}: ${${TEXT_VAR}}")
+    set(${TEXT_VAR} ${TEXT_RESULT} PARENT_SCOPE)
+    set(str2color_FAIL ${TEXT_FAIL} PARENT_SCOPE)
+endfunction()
+
+#printc(COLOR NORMAL TEST_NORMAL)
+#printc(BOLD COLOR NORMAL TEST_NORMAL_BOLD)
+#printc(COLOR BLACK TEST_BLACK)
+#printc(BOLD COLOR BLACK TEST_BLACK_BOLD)
+#printc(COLOR RED TEST_RED)
+#printc(BOLD COLOR RED TEST_RED_BOLD)
+#printc(COLOR GREEN TEST_GREEN)
+#printc(BOLD COLOR GREEN TEST_GREEN_BOLD)
+#printc(COLOR YELLOW TEST_YELLOW)
+#printc(BOLD COLOR YELLOW TEST_YELLOW_BOLD)
+#printc(COLOR BLUE TEST_BLUE)
+#printc(BOLD COLOR BLUE TEST_BLUE_BOLD)
+#printc(COLOR MAGENTA TEST_MAGENTA)
+#printc(BOLD COLOR MAGENTA TEST_MAGENTA_BOLD)
+#printc(COLOR CYAN TEST_CYAN)
+#printc(BOLD COLOR CYAN TEST_CYAN_BOLD)
+#printc(COLOR WHITE TEST_WHITE)
+#printc(BOLD COLOR WHITE TEST_WHITE_BOLD )
+
 #
 # Usage:
 # toCamelCase(<variable|list> <out>)
@@ -80,7 +208,7 @@ function(pathToCamelCase pathString out)
     # printList(pathList)
     # file(TO_CMAKE_PATH ${pathString} mylist)
     # print(mylist)
-    
+
     toCamelCase(pathList output)
     set(${out} ${output} PARENT_SCOPE)
 endfunction()
@@ -150,7 +278,7 @@ function(shortPath path out)
             list(APPEND newPath ${dir})
             endif()
             # print(newPath)
-            
+
         endforeach()
         set(_path "${newPath};${last}")
         # message("> ${_path}")
