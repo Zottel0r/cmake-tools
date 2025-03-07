@@ -213,6 +213,7 @@ function(dump_variables)
     message(" -------------------- ")
 endfunction()
 
+include(${CMAKE_CURRENT_LIST_DIR}/propertyUtils.cmake)
 
 # set(bar 1 2 3 4 )
 
